@@ -199,6 +199,15 @@ section.step{padding:32px 0 6px}
 .sub .ctl{display:flex;gap:4px;margin-top:8px;align-items:center;flex-wrap:wrap}
 .sub .ctl button{min-height:34px;min-width:34px;padding:0 8px;font-size:12px}
 .dots{display:inline-flex;gap:3px;margin-right:auto}
+.stars{color:var(--acc);letter-spacing:1px;font-size:16px;line-height:1;white-space:nowrap;margin-right:auto}
+.stars i{font-style:normal;color:#C3CFD4}
+.lane h3 .st{font-size:15px;color:var(--acc);letter-spacing:1px;margin-left:6px}
+.pipe{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--dark);color:#fff;padding:14px 16px;margin-bottom:12px}
+.pipe .big{font:900 14px/1.2 Montserrat,sans-serif;text-transform:uppercase;margin-right:6px}
+.pipe .pc{background:#14262D;padding:7px 10px;font-size:14px;white-space:nowrap}
+.pipe .pc b{color:var(--acc);letter-spacing:1px}
+.pipe i{color:var(--acc);font-style:normal;font-weight:900}
+.card .lvb .stc{color:var(--acc);font-size:18px;letter-spacing:2px}
 .dots i{width:8px;height:8px;border-radius:50%;background:#C9D5DA}
 .dots i.on{background:var(--acc)}
 .empty{font-size:14px;color:var(--muted);border:1.5px dashed #B9C7CC;padding:14px;text-align:center}
@@ -424,7 +433,7 @@ footer b{color:#fff}
 
     <section class="step" id="s4">
       <div class="sh">
-        <div><h2><small>Шаг 4</small>Разбивка по возрастам</h2><p>Распределение происходит <b>автоматически</b>: у каждой подзадачи есть уровень сложности — наблюдение и сбор материала уходят 14–15 лет, опросы и сравнение — 16–18, анализ и решения — 19–20. Если какую-то группу не берёте, её задачи сами переходят соседней группе и упрощаются или усложняются. Поправлять вручную не обязательно — только если хотите.</p></div>
+        <div><h2><small>Шаг 4</small>Разбивка по возрастам</h2><p>Большая задача делится на части, и каждая получает сложность: <b>★ простая</b> (наблюдение, сбор материала) уходит 14–15 лет, <b>★★ средняя</b> (опросы, сравнение, тексты) — 16–18, <b>★★★ сложная</b> (анализ и решения) — 19–20. Всё происходит <b>автоматически</b>. Если какую-то группу не берёте, её задачи сами переходят соседней группе и упрощаются или усложняются. Поправлять вручную не обязательно — только если хотите.</p></div>
         <div class="btns"><span class="mode" id="mode">Шаблоны платформы</span><button type="button" id="autoBtn">Вернуть авто</button><button type="button" id="split" class="dk">Разбить заново</button><button type="button" id="aiSplit" class="pri hide">Разбить с ИИ</button></div>
       </div>
       <div class="opts">
@@ -434,6 +443,7 @@ footer b{color:#fff}
         <div class="panel"><label>Кто проверяет решения</label><div class="seg" id="segRev"><button type="button" data-r="org">Наш куратор</button><button type="button" data-r="fdos">Куратор платформы</button></div></div>
       </div>
       <div id="status" role="status" aria-live="polite"></div>
+      <div class="pipe" id="pipe" aria-live="polite"></div>
       <div class="board" id="board"></div>
       <div class="add">
         <input type="text" id="newSub" placeholder="Своя подзадача, например: собрать 10 мемов по теме">
@@ -3027,6 +3037,7 @@ const GEN = {
   id:{now:["задачу давно не удаётся решить, и нужен свежий взгляд молодёжи","ищем идеи для нового проекта или акции для молодёжи","есть несколько вариантов решения, и мы хотим выбрать лучший вместе с молодёжью"],want:["получить идеи решения и проработанный вариант","получить несколько идей и выбрать лучшую вместе с молодёжью","получить готовую концепцию проекта"]}
 };
 const fill = t => { const f = FORMS[S.sphere] || FORMS.it; return t.replace("{nom}", f[0]).replace("{pre}", f[1]).replace("{gen}", f[2]); };
+const starsOf = c => "★".repeat(c) + "<i>" + "☆".repeat(3-c) + "</i>";
 const REASON = {1:"наблюдение и сбор материала",2:"опрос, сравнение, тексты",3:"анализ и решения"};
 const AGES = ["14–15","16–18","19–20"];
 const CLS = {"14–15":"8–9 класс","16–18":"10–11 класс, колледж","19–20":"1–3 курс вуза"};
@@ -3150,9 +3161,11 @@ function renderBoard() {
   $("#mode").textContent = S.ai ? "Режим: ИИ" : "Шаблоны платформы";
   $("#board").innerHTML = AGES.map((a,ai) => {
     const list = S.subs.filter(x=>x.age===a);
-    return `<div class="lane${S.groups.includes(a)?"":" dis"}" data-lane="${a}"><h3><em>${S.agView==="cls"?esc(CLS[a]):a}</em><small>${list.filter(x=>x.on).length} поруч.</small></h3><div class="lv">${S.agView==="cls"?a+" лет · ":""}${LEVEL[a]} уровень · ${SPEC[a].hours}</div>${
-      list.length ? list.map(x=>`<div class="sub${x.on?"":" off"}" draggable="true" data-drag="${x.id}"><div class="t">${esc(x.title)}</div><div class="d">${esc(x.task)}</div>${x.auto!==false?`<div class="why">Авто: ${REASON[x.c]||"своя подзадача"}</div>`:`<div class="why man">Перенесено вручную</div>`}${adapt(x)?`<div class="adp">${adapt(x)}</div>`:""}<div class="ctl"><span class="dots" title="Сложность ${x.c} из 3">${[1,2,3].map(i=>`<i class="${i<=x.c?"on":""}"></i>`).join("")}</span><button type="button" data-mv="-1" data-id="${x.id}" ${ai===0?"disabled":""} aria-label="Младше">←</button><button type="button" data-mv="1" data-id="${x.id}" ${ai===2?"disabled":""} aria-label="Старше">→</button><button type="button" data-tg="${x.id}">${x.on?"Убрать":"Вернуть"}</button></div></div>`).join("") : `<div class="empty">${S.groups.includes(a)?"Перетащите сюда карточку или нажмите стрелку":"Эту группу вы не выбрали — её задачи переданы соседней"}</div>`}</div>`;
+    return `<div class="lane${S.groups.includes(a)?"":" dis"}" data-lane="${a}"><h3><em>${S.agView==="cls"?esc(CLS[a]):a}<span class="st">${"★".repeat(ai+1)}</span></em><small>${list.filter(x=>x.on).length} поруч.</small></h3><div class="lv">${S.agView==="cls"?a+" лет · ":""}${LEVEL[a]} уровень · ${SPEC[a].hours}</div>${
+      list.length ? list.map(x=>`<div class="sub${x.on?"":" off"}" draggable="true" data-drag="${x.id}"><div class="t">${esc(x.title)}</div><div class="d">${esc(x.task)}</div>${x.auto!==false?`<div class="why">Авто: ${REASON[x.c]||"своя подзадача"}</div>`:`<div class="why man">Перенесено вручную</div>`}${adapt(x)?`<div class="adp">${adapt(x)}</div>`:""}<div class="ctl"><span class="stars" title="Сложность ${x.c} из 3">${starsOf(x.c)}</span><button type="button" data-mv="-1" data-id="${x.id}" ${ai===0?"disabled":""} aria-label="Младше">←</button><button type="button" data-mv="1" data-id="${x.id}" ${ai===2?"disabled":""} aria-label="Старше">→</button><button type="button" data-tg="${x.id}">${x.on?"Убрать":"Вернуть"}</button></div></div>`).join("") : `<div class="empty">${S.groups.includes(a)?"Перетащите сюда карточку или нажмите стрелку":"Эту группу вы не выбрали — её задачи переданы соседней"}</div>`}</div>`;
   }).join("");
+  const onS = S.subs.filter(x=>x.on);
+  $("#pipe").innerHTML = onS.length ? `<span class="big">Задача → ${onS.length} ${onS.length<5?"части":"частей"}</span>` + AGES.map(a=>{ const n = onS.filter(x=>x.age===a).length; return n ? `<span class="pc"><b>${"★".repeat(AGES.indexOf(a)+1)}</b> ${n} × → ${esc(gLabel(a))}</span>` : ""; }).filter(Boolean).join('<i>·</i>') : "";
   $("#newAge").innerHTML = AGES.map(a=>`<option value="${a}" ${a==="16–18"?"selected":""}>${esc(gLabel(a))}</option>`).join("");
 }
 
@@ -3191,7 +3204,7 @@ function renderCareer() {
 
 function cardText(x) {
   const sp = SPEC[x.age];
-  return `${x.title}\nГруппа: ${x.age} лет (${CLS[x.age]}) · ${LEVEL[x.age]} уровень · ${sp.pts} баллов\nФормат: ${S.kind==="ever"?"постоянное поручение, весь год":"разовое, срок "+sp.days} · проверяет ${S.rev==="org"?"куратор организации":"куратор платформы"}\nКонтекст: ${S.text}\nЗадача: ${x.task}${adapt(x)?" "+adapt(x):""}\nРезультат: ${x.result}\nКритерии: ${CRIT[lvlOf(x)].join("; ")}\nОбъём: ${sp.hours}\nНавыки: ${(x.skills||[]).join(", ")}\nПравила: ${LEGAL[x.age]}`;
+  return `${x.title}\nГруппа: ${x.age} лет (${CLS[x.age]}) · ${LEVEL[x.age]} уровень ${"★".repeat(lvlOf(x))} · ${sp.pts} баллов\nФормат: ${S.kind==="ever"?"постоянное поручение, весь год":"разовое, срок "+sp.days} · проверяет ${S.rev==="org"?"куратор организации":"куратор платформы"}\nКонтекст: ${S.text}\nЗадача: ${x.task}${adapt(x)?" "+adapt(x):""}\nРезультат: ${x.result}\nКритерии: ${CRIT[lvlOf(x)].join("; ")}\nОбъём: ${sp.hours}\nНавыки: ${(x.skills||[]).join(", ")}\nПравила: ${LEGAL[x.age]}`;
 }
 function effectText() {
   const on = S.subs.filter(x=>x.on), per = Math.max(1, parseInt(S.per,10) || 10);
@@ -3213,7 +3226,7 @@ function renderCards() {
   const car = CAREER.filter(c=>S.career.includes(c.id));
   $("#trackOut").innerHTML = `${S.risks && S.risks.length ? `<div class="risk" style="margin:0 0 12px"><b>Перед отправкой исправьте формулировку</b>Найдено рисков по закону: ${S.risks.length}. Вернитесь к <a href="#s3">шагу 3</a>.</div>` : ""}<div class="track" style="border-style:solid;border-color:var(--line)"><b>Контекст для всех поручений</b><p style="margin:6px 0 0">${esc(S.text)}</p></div><div class="track"><b>Что получат лучшие участники</b>${car.length?`<ul>${car.map(c=>`<li>${c.n} — ${c.age}</li>`).join("")}</ul>`:`<p style="margin:6px 0 0">Не выбрано — отметьте варианты на <a href="#s5">шаге 5</a>.</p>`}</div>`;
   $("#cards").innerHTML = (S.sample ? `<p class="note" style="margin:0 0 10px">Пример заполнен для онлайн-школы — выберите свою сферу и цель выше.</p>` : "") +
-    (AGES.flatMap(a=>on.filter(x=>x.age===a)).map(x=>{ const sp = SPEC[x.age]; return `<article class="card"><div class="lvb"><b>${x.age}</b><span>${esc(CLS[x.age])}</span><span>${LEVEL[x.age]}</span><span class="pts">${sp.pts} баллов</span></div><div class="bd"><h3>${esc(x.title)}</h3><p class="f"><b>Задача</b>${esc(x.task)}${adapt(x)?` <i>${adapt(x)}</i>`:""}</p><p class="f"><b>Результат</b>${esc(x.result)}</p><div class="f"><b>Критерии оценки</b><ul>${CRIT[lvlOf(x)].map(c=>`<li>${c}</li>`).join("")}</ul></div><div class="meta"><span>${S.kind==="ever"?"Постоянное":"Срок: "+sp.days}</span><span>Объём: ${sp.hours}</span><span>Проверяет: ${S.rev==="org"?"ваш куратор":"куратор платформы"}</span>${(x.skills||[]).map(s=>`<span>${esc(s)}</span>`).join("")}</div><div class="legal">${LEGAL[x.age]}</div><button type="button" class="cp" data-cp="${x.id}">Копировать поручение</button></div></article>`; }).join("") || `<div class="empty">Включите хотя бы одну подзадачу на шаге 4</div>`);
+    (AGES.flatMap(a=>on.filter(x=>x.age===a)).map(x=>{ const sp = SPEC[x.age]; return `<article class="card"><div class="lvb"><b>${x.age}</b><span>${esc(CLS[x.age])}</span><span>${LEVEL[x.age]}</span><span class="stc" title="Сложность">${"★".repeat(lvlOf(x))}</span><span class="pts">${sp.pts} баллов</span></div><div class="bd"><h3>${esc(x.title)}</h3><p class="f"><b>Задача</b>${esc(x.task)}${adapt(x)?` <i>${adapt(x)}</i>`:""}</p><p class="f"><b>Результат</b>${esc(x.result)}</p><div class="f"><b>Критерии оценки</b><ul>${CRIT[lvlOf(x)].map(c=>`<li>${c}</li>`).join("")}</ul></div><div class="meta"><span>${S.kind==="ever"?"Постоянное":"Срок: "+sp.days}</span><span>Объём: ${sp.hours}</span><span>Проверяет: ${S.rev==="org"?"ваш куратор":"куратор платформы"}</span>${(x.skills||[]).map(s=>`<span>${esc(s)}</span>`).join("")}</div><div class="legal">${LEGAL[x.age]}</div><button type="button" class="cp" data-cp="${x.id}">Копировать поручение</button></div></article>`; }).join("") || `<div class="empty">Включите хотя бы одну подзадачу на шаге 4</div>`);
 }
 
 function renderAll() { renderPicks(); renderBoard(); renderCareer(); renderVerify(); renderCards(); renderFeed(); save(); }
@@ -3241,7 +3254,7 @@ function renderFeed() {
     (!q || (x.t+" "+x.o).toLowerCase().includes(q)));
   const sp = id => (SPHERES.find(s=>s.id===id)||{}).n || "";
   $("#feed").innerHTML = items.map((x,i)=>`<article class="task${x.mine?" mine":""}"><div class="tp"><span class="ag">${esc(S.agView==="cls"?CLS[x.a]:x.a+" лет")}</span><span class="badge${x.mine?" new":x.fmt!=="онлайн"?" live":""}">${x.mine?"Ваше":x.fmt!=="онлайн"?"Событие":x.kind==="ever"?"Весь год":"Поручение"}</span></div>
-    <div class="bd"><h3>${esc(x.t)}</h3><div class="org">${esc(x.o)} · ${esc(sp(x.s))}</div><div class="row"><span>${esc(x.fmt)}</span><span>до ${x.h} ч</span><span>${["","Базовая","Средняя","Проектная"][x.c]}</span><span>${SPEC[x.a].pts} баллов</span></div></div>
+    <div class="bd"><h3>${esc(x.t)}</h3><div class="org">${esc(x.o)} · ${esc(sp(x.s))}</div><div class="row"><span>${esc(x.fmt)}</span><span>до ${x.h} ч</span><span title="Сложность">${"★".repeat(x.c)}${"☆".repeat(3-x.c)} ${["","базовая","средняя","проектная"][x.c]}</span><span>${SPEC[x.a].pts} баллов</span></div></div>
     <details><summary>Подробнее</summary><p>${esc(x.task || "Подробное описание, критерии и срок — в карточке поручения в личном кабинете.")}</p>${x.res?`<p><b>Сдать:</b> ${esc(x.res)}</p>`:""}<button type="button" class="pri apply" data-apply="${i}">Взять поручение</button><div class="applied hide" id="ap${i}">Заявка отправлена. В рабочей версии поручение появится в твоём личном кабинете.</div></details></article>`).join("") || `<div class="empty">Ничего не найдено — сбросьте фильтры</div>`;
 }
 
